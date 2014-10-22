@@ -9,15 +9,43 @@ angular.module('greStatusApp')
     var itensPerPage = 20;
 
     $scope.logs = {
-      currentPage: 0,
+      currentPage: 'last',
       pages: [[]]
     };
 
     $scope.lastLogs = [];
     $scope.source = [];
 
+    $scope.pageToRender = function() {
+      if($scope.logs.currentPage === 'last') {
+        return $scope.lastLogs;
+      } else {
+        return $scope.logs.pages[$scope.logs.currentPage];
+      }
+    }
+
     $scope.goToPage = function(i) {
       $scope.logs.currentPage = i;
+    }
+
+    $scope.canShowPage = function(i) {
+      return i < $scope.maxPageToShow() && i > $scope.minPageToShow();
+    }
+
+    $scope.minPageToShow = function() {
+      if($scope.logs.currentPage === 'last') {
+        return $scope.logs.pages.length - 8;
+      } else {
+        return $scope.logs.currentPage - 3;
+      }
+    };
+
+    $scope.maxPageToShow = function() {
+      if($scope.logs.currentPage === 'last') {
+        return $scope.logs.pages.length - 1;
+      } else {
+        return $scope.logs.currentPage + 3;
+      }
     }
 
     pool();
@@ -41,17 +69,11 @@ angular.module('greStatusApp')
 
           if(lastPage.length % itensPerPage === 0) {
             $scope.logs.pages.push([]);
-            $scope.logs.currentPage = $scope.logs.pages.length - 1;
           }
         });
 
         $scope.source = $scope.source.concat(response.data.data);
-
         $scope.lastLogs = $scope.source.slice($scope.source.length - 1 - itensPerPage, $scope.source.length - 1);
-
-        if($scope.logs.pages.length - $scope.logs.currentPage == 1) {
-          //$scope.logs.currentPage = $scope.logs.pages.length - 1;
-        }
       });
     }
 
@@ -62,6 +84,9 @@ angular.module('greStatusApp')
           $scope.attrs = response.data.body.split(';');
           var result = [];
           angular.forEach($scope.attrs, function(value){
+            if(value === '') {
+              return;
+            }
             var temp = value.split('@');
             value = {
               ip: temp[0],
